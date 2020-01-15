@@ -1,7 +1,6 @@
 package srpfacadelab;
 
 import java.util.List;
-import java.util.ArrayList;
 
 
 public class RpgPlayer {
@@ -15,15 +14,14 @@ public class RpgPlayer {
 
     private int armour;
 
-    private List<Item> inventory;
+    public Inventory inventory;
 
     // How much the player can carry in pounds
-    private int carryingCapacity;
+    //private int carryingCapacity;
 
     public RpgPlayer(IGameEngine gameEngine) {
         this.gameEngine = gameEngine;
-        inventory = new ArrayList<Item>();
-        carryingCapacity = MAX_CARRYING_CAPACITY;
+        inventory = new Inventory(MAX_CARRYING_CAPACITY);
     }
 
     public void useItem(Item item) {
@@ -38,11 +36,11 @@ public class RpgPlayer {
     }
 
     public boolean pickUpItem(Item item) {
-        int weight = calculateInventoryWeight();
-        if (weight + item.getWeight() > carryingCapacity)
+        int weight = inventory.calculateInventoryWeight();
+        if (weight + item.getWeight() > inventory.carryingCapacity)
             return false;
 
-        if (item.isUnique() && checkIfItemExistsInInventory(item))
+        if (item.isUnique() && inventory.checkIfItemExistsInInventory(item))
             return false;
 
         // Don't pick up items that give health, just consume them.
@@ -59,37 +57,41 @@ public class RpgPlayer {
             return true;
         }
 
-        if (item.isRare())
+        if (item.isRare() && item.isUnique()) 
+        {
+            gameEngine.playSpecialEffect("blue_swirly");
+        }
+        else if (item.isRare())
             gameEngine.playSpecialEffect("cool_swirly_particles");
 
-        inventory.add(item);
+        inventory.itemList.add(item);
 
         calculateStats();
 
         return true;
     }
 
-    private void calculateStats() {
-        for (Item i: inventory) {
+    public void calculateStats() {
+        for (Item i: inventory.itemList) {
             armour += i.getArmour();
         }
     }
 
-    private boolean checkIfItemExistsInInventory(Item item) {
-        for (Item i: inventory) {
+    /*private boolean checkIfItemExistsInInventory(Item item) {
+        for (Item i: inventory.itemList) {
             if (i.getId() == item.getId())
                 return true;
         }
         return false;
-    }
+    } */
 
-    private int calculateInventoryWeight() {
+    /*private int calculateInventoryWeight() {
         int sum=0;
-        for (Item i: inventory) {
+        for (Item i: inventory.itemList) {
             sum += i.getWeight();
         }
         return sum;
-    }
+    }*/
 
     public void takeDamage(int damage) {
         if (damage < armour) {
@@ -97,6 +99,12 @@ public class RpgPlayer {
         }
 
         int damageToDeal = damage - armour;
+
+        int percentHolding = inventory.calculateInventoryWeight()/inventory.carryingCapacity;
+        if (percentHolding < .5) {
+            damageToDeal -= damageToDeal *.25;
+        }
+
         health -= damageToDeal;
 
         gameEngine.playSpecialEffect("lots_of_gore");
@@ -122,15 +130,21 @@ public class RpgPlayer {
         return armour;
     }
 
-    private void setArmour(int armour) {
+    public void setArmour(int armour) {
         this.armour = armour;
     }
 
-    public int getCarryingCapacity() {
-        return carryingCapacity;
+    /*public int getCarryingCapacity() {
+        return inventory.carryingCapacity;
+    }*/
+
+    /*private void setCarryingCapacity(int carryingCapacity) {
+        inventory.carryingCapacity = carryingCapacity;
+    }*/
+
+    public void ReduceDamage() {
+
     }
 
-    private void setCarryingCapacity(int carryingCapacity) {
-        this.carryingCapacity = carryingCapacity;
-    }
+
 }
